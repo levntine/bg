@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Levntine - Roblox</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & Plus Jakarta Sans (closest match to Roblox Builder Sans) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            body: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+          },
+          colors: {
+            rbx: {
+              lightBg: '#FFFFFF',
+              lightPill: '#E8EAEE',
+              lightPillHover: '#DCE0E6',
+              lightText: '#191B1D',
+              lightSub: '#606162',
+              darkBg: '#111214',
+              darkCard: '#191B1D',
+              darkPill: '#2B2D30',
+              darkPillHover: '#393B3D',
+              blue: '#0077FF',
+              green: '#00B06F'
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    h1, h2, h3, .rbx-heading {
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    }
+
+    /* Banner Default Cool Gray Gradient matching the screenshot */
+    .rbx-banner-default {
+      background: linear-gradient(180deg, #C7CBD3 0%, #D2D5DD 55%, #C9CDD5 100%);
+    }
+
+    /* Smooth Avatar 3D Turntable Simulation */
+    #avatar-stage {
+      perspective: 900px;
+    }
+    #avatar-rig {
+      transform-style: preserve-3d;
+      transition: transform 0.08s linear;
+    }
+
+    /* Custom Range Sliders */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: #CBD5E1;
+      height: 5px;
+      border-radius: 999px;
+      outline: none;
+    }
+    .dark input[type="range"] {
+      background: #393B3D;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background: #0077FF;
+      cursor: pointer;
+      border: 2px solid #FFFFFF;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Subtle Glow on Antlers matching screenshot */
+    .antler-glow {
+      filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.95)) drop-shadow(0 0 6px rgba(255, 255, 255, 0.65));
+    }
+  </style>
+</head>
+<body class="bg-white text-[#191B1D] dark:bg-[#111214] dark:text-white min-h-screen flex flex-col">
+
+  <!-- Hidden File Inputs -->
+  <input type="file" id="banner-file-input" accept="image/png, image/jpeg, image/webp, image/gif" class="hidden" />
+  <input type="file" id="avatar-file-input" accept="image/png, image/webp, image/jpeg" class="hidden" />
+  <input type="file" id="screenshot-extract-input" accept="image/png, image/jpeg, image/webp" class="hidden" />
+
+  <!-- =====================================================================
+       COMPACT TOP STUDIO CONTROL BAR (Real Avatar Loader + 2560x1440 Banner)
+       ===================================================================== -->
+  <header class="w-full bg-[#191B1D] text-white border-b border-[#2B2D30] px-4 py-2.5 shadow-sm z-40">
+    <div class="max-w-[1300px] mx-auto flex flex-wrap items-center justify-between gap-2.5">
+
+      <!-- Left: Primary 2560x1440 Banner Upload + Status -->
+      <div class="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onclick="document.getElementById('banner-file-input').click()"
+          class="h-[34px] px-3.5 rounded-lg bg-[#0077FF] hover:bg-[#0063D6] text-white text-[12.5px] font-bold flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+        >
+          <i class="fa-solid fa-image"></i>
+          <span>Upload 2560×1440 Banner</span>
+        </button>
+
+        <span id="resolution-badge" class="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-[#2B2D30] text-[#D1D5DB]">
+          Default Gray Banner
+        </span>
+
+        <button
+          type="button"
+          onclick="resetBanner()"
+          class="h-[34px] px-2.5 rounded-lg bg-[#2B2D30] hover:bg-[#393B3D] text-[#D1D5DB] hover:text-white text-[12px] font-semibold transition cursor-pointer"
+          title="Reset Banner Background"
+        >
+          Reset BG
+        </button>
+      </div>
+
+      <!-- Right: Real Roblox Avatar Fetcher + Ctrl+V Screenshot Extractor -->
+      <div class="flex flex-wrap items-center gap-2">
+        <!-- Live Roblox Username Fetcher -->
+        <div class="flex items-center bg-[#2B2D30] rounded-lg p-0.5 border border-[#393B3D]">
+          <span class="pl-2.5 pr-1 text-[11.5px] text-[#9CA3AF] font-semibold">@</span>
+          <input
+            id="roblox-username-input"
+            type="text"
+            value="Levntine"
+            placeholder="Roblox username"
+            onkeydown="if(event.key==='Enter') fetchRealRobloxAvatar(this.value)"
+            class="w-[105px] sm:w-[120px] bg-transparent text-white text-[12px] font-semibold outline-none py-1 pr-1"
+          />
+          <button
+            type="button"
+            onclick="fetchRealRobloxAvatar(document.getElementById('roblox-username-input').value)"
+            class="px-2.5 py-1 rounded-md bg-[#393B3D] hover:bg-[#4B4E52] text-white text-[11.5px] font-bold transition cursor-pointer flex items-center gap-1"
+            title="Fetch real 3D avatar render from Roblox"
+          >
+            <i id="fetch-spinner" class="fa-solid fa-rotate text-[10px]"></i>
+            <span>Fetch Avatar</span>
+          </button>
+        </div>
+
+        <!-- Paste / Upload Screenshot Cutout Extractor -->
+        <button
+          type="button"
+          onclick="document.getElementById('screenshot-extract-input').click()"
+          title="Paste a Roblox profile screenshot (Ctrl+V) or select it to auto-extract your transparent avatar cutout"
+          class="h-[34px] px-3 rounded-lg bg-[#2B2D30] hover:bg-[#393B3D] border border-[#393B3D] text-white text-[12px] font-semibold flex items-center gap-1.5 transition cursor-pointer"
+        >
+          <i class="fa-solid fa-wand-magic-sparkles text-sky-400"></i>
+          <span>Extract from Screenshot (Ctrl+V)</span>
+        </button>
+
+        <!-- Direct Transparent Avatar PNG Upload -->
+        <button
+          type="button"
+          onclick="document.getElementById('avatar-file-input').click()"
+          title="Upload a transparent avatar PNG directly"
+          class="h-[34px] px-3 rounded-lg bg-[#2B2D30] hover:bg-[#393B3D] border border-[#393B3D] text-white text-[12px] font-semibold flex items-center gap-1.5 transition cursor-pointer"
+        >
+          <i class="fa-solid fa-user-check text-emerald-400"></i>
+          <span class="hidden sm:inline">Upload Avatar PNG</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- =====================================================================
+       MAIN PROFILE VIEWPORT CONTAINER (Exact 2026 Roblox Profile Header)
+       ===================================================================== -->
+  <main class="w-full max-w-[1300px] mx-auto px-4 sm:px-6 pt-5 pb-10 flex-1">
+
+    <!-- Responsive Preview Wrapper (Desktop 1300px, Tablet 768px, Mobile 412px) -->
+    <div id="preview-viewport-frame" class="w-full mx-auto transition-all duration-300">
+
+      <!-- 1. TOP 2560x1440 PROFILE BANNER & CENTERED REAL ROBLOX CHARACTER -->
+      <div class="relative">
+        <div
+          id="profile-banner-box"
+          onclick="if(!isDraggingAvatar) document.getElementById('banner-file-input').click()"
+          title="Click or Drag & Drop a 2560×1440 image to preview it behind your avatar"
+          class="rbx-banner-default relative w-full h-[210px] sm:h-[224px] rounded-[12px] overflow-hidden select-none cursor-pointer group shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)]"
+        >
+          <!-- Uploaded / Preset 2560x1440 Banner Image Layer -->
+          <img
+            id="banner-bg-image"
+            alt="Profile Banner Background"
+            class="hidden absolute inset-0 w-full h-full object-cover pointer-events-none transition-transform duration-150"
+            style="object-position: 50% 50%; transform: scale(1);"
+          />
+
+          <!-- Optional 2560x1440 Safe-Zone & Crop Guide Overlay -->
+          <div id="safe-zone-overlay" class="hidden absolute inset-0 pointer-events-none z-20">
+            <div class="absolute inset-0 border-2 border-dashed border-sky-400/90"></div>
+            <div class="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[150px] border-x border-dashed border-amber-400/80 bg-amber-400/10 flex flex-col items-center justify-start pt-2">
+              <span class="px-1.5 py-0.5 rounded bg-black/75 text-[9px] font-bold text-amber-300 tracking-wider uppercase">Avatar Zone</span>
+            </div>
+            <div class="absolute -bottom-[52px] left-[16px] w-[116px] h-[116px] rounded-full border-2 border-dashed border-rose-400 bg-rose-500/15"></div>
+            <div class="absolute top-3 left-3 px-2.5 py-1 rounded-md bg-black/75 backdrop-blur-sm text-[11px] font-semibold text-white flex items-center gap-1.5">
+              <i class="fa-solid fa-crop-simple text-sky-400"></i>
+              <span>Visible Banner Window (2560×1440 16:9 Slice)</span>
+            </div>
+          </div>
+
+          <!-- Hover Hint to Upload -->
+          <div id="banner-hover-hint" class="absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-20 pointer-events-none">
+            <span class="px-2.5 py-1.5 rounded-lg bg-black/65 backdrop-blur-sm text-white text-[12px] font-semibold flex items-center gap-1.5 shadow">
+              <i class="fa-solid fa-image text-sky-400"></i>
+              <span>Click or Drop 2560×1440 Background</span>
+            </span>
+          </div>
+
+          <!-- Top-Right "3D" Button (Exact 44x44px, #b4b8c1, rounded-8px) -->
+          <button
+            id="toggle-3d-btn"
+            type="button"
+            onclick="event.stopPropagation(); toggle3DMode();"
+            class="absolute top-[14px] right-[14px] z-30 w-[44px] h-[44px] rounded-[8px] bg-[#B4B8C1]/90 hover:bg-[#A6ABB6] text-[#191B1D] font-bold text-[13.5px] flex items-center justify-center shadow-xs backdrop-blur-[2px] transition cursor-pointer"
+            title="Toggle 3D Interactive View"
+          >
+            3D
+          </button>
+
+          <!-- 3D Drag Hint Badge -->
+          <div id="mode-3d-hint" class="hidden absolute bottom-2.5 right-3 z-30 px-2.5 py-1 rounded-md bg-black/65 text-white text-[11px] font-medium pointer-events-none">
+            <i class="fa-solid fa-rotate mr-1 text-sky-400"></i> Drag horizontally to rotate 3D avatar
+          </div>
+
+          <!-- CENTERED FULL-BODY REAL ROBLOX CHARACTER (Raster PNG Render Only) -->
+          <div id="avatar-stage" class="absolute inset-x-0 bottom-0 h-[214px] flex items-end justify-center pointer-events-none z-10">
+            <div id="avatar-rig" class="h-full flex items-end justify-center relative">
+
+              <!-- Loading Skeleton Pulse while fetching real Roblox API render -->
+              <div id="avatar-loading-pill" class="hidden mb-16 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-xs text-white text-[11.5px] font-semibold flex items-center gap-2">
+                <i class="fa-solid fa-circle-notch fa-spin text-sky-400"></i>
+                <span>Loading real Roblox avatar...</span>
+              </div>
+
+              <!-- Real Roblox Full-Body Avatar Render (Fetched from Roblox API, Extracted from Screenshot, or Uploaded PNG) -->
+              <img
+                id="real-fullbody-avatar"
+                alt="Real Roblox Avatar"
+                crossorigin="anonymous"
+                class="h-[214px] w-auto max-w-none object-contain object-bottom select-none drop-shadow-[0_2px_6px_rgba(0,0,0,0.12)]"
+              />
+
+              <!-- Fallback Prompt if offline / API blocked and no screenshot pasted yet -->
+              <div id="avatar-fallback-card" class="hidden pointer-events-auto mb-6 px-4 py-3 rounded-xl bg-black/75 backdrop-blur-md text-white text-center max-w-[290px] shadow-lg border border-white/15" onclick="event.stopPropagation()">
+                <p class="text-[12.5px] font-bold">Load Your Real Roblox Avatar</p>
+                <p class="text-[11px] text-gray-300 mt-0.5">Press <kbd class="px-1.5 py-0.5 bg-white/15 rounded text-white font-mono">Ctrl+V</kbd> with your screenshot copied, or upload your PNG.</p>
+                <div class="mt-2.5 flex items-center justify-center gap-2">
+                  <button type="button" onclick="document.getElementById('screenshot-extract-input').click()" class="px-2.5 py-1 rounded-md bg-[#0077FF] hover:bg-[#0063D6] text-[11px] font-bold cursor-pointer">
+                    Select Screenshot
+                  </button>
+                  <button type="button" onclick="document.getElementById('avatar-file-input').click()" class="px-2.5 py-1 rounded-md bg-white/15 hover:bg-white/25 text-[11px] font-semibold cursor-pointer">
+                    Upload PNG
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. OVERLAPPING CIRCULAR HEADSHOT + USERNAME + ACTION BUTTONS ROW -->
+        <div class="px-2 sm:px-4 flex flex-col md:flex-row md:items-start justify-between gap-4">
+
+          <!-- Left Group: Circular Headshot + Display Name, @Handle & Thumbs Pill -->
+          <div class="flex items-end sm:items-center gap-3.5 sm:gap-4">
+            <!-- Overlapping 116px Circular Real Avatar Headshot -->
+            <div class="relative -mt-[52px] ml-0 sm:ml-[2px] z-30 shrink-0">
+              <div
+                onclick="document.getElementById('avatar-file-input').click()"
+                title="Real Roblox Avatar Headshot (Click to upload custom avatar)"
+                class="w-[116px] h-[116px] rounded-full bg-[#ECEEF2] dark:bg-[#232527] border-[4px] border-white dark:border-[#111214] overflow-hidden shadow-xs flex items-center justify-center cursor-pointer relative"
+              >
+                <img
+                  id="real-headshot-avatar"
+                  alt="Roblox Avatar Headshot"
+                  crossorigin="anonymous"
+                  class="w-full h-full object-cover object-top select-none"
+                />
+              </div>
+
+              <!-- Signature Roblox Blue Profile Status Circle Badge (#0084ff, 26px) -->
+              <div
+                title="Roblox Profile Status"
+                class="absolute bottom-1 right-0.5 w-[26px] h-[26px] rounded-full bg-[#0084FF] border-[2.5px] border-white dark:border-[#111214] flex items-center justify-center shadow-xs"
+              >
+                <i class="fa-regular fa-user text-white text-[11px]"></i>
+              </div>
+            </div>
+
+            <!-- Display Name, @Username, and Dark Rating Pill -->
+            <div class="pt-2.5">
+              <h1
+                id="profile-display-name"
+                contenteditable="true"
+                spellcheck="false"
+                title="Click to edit display name"
+                class="text-[24px] sm:text-[26px] font-extrabold text-[#191B1D] dark:text-white leading-tight tracking-tight outline-none focus:bg-black/5 dark:focus:bg-white/10 rounded px-0.5 -mx-0.5"
+              >Levntine</h1>
+
+              <p
+                id="profile-handle"
+                contenteditable="true"
+                spellcheck="false"
+                class="text-[14px] text-[#606266] dark:text-[#BDBEC0] font-normal leading-snug outline-none"
+              >@Levntine</p>
+
+              <!-- Dark Pill Badge with Thumbs Up & 0 (#393b3d) -->
+              <button
+                type="button"
+                onclick="incrementLikes()"
+                title="Click to test rating counter"
+                class="mt-1.5 inline-flex items-center gap-2 px-3 py-[3px] rounded-full bg-[#393B3D] hover:bg-[#494B4E] text-white text-[12px] font-bold transition cursor-pointer"
+              >
+                <i class="fa-solid fa-thumbs-up text-[11px] text-[#E5E7EB]"></i>
+                <span id="like-counter">0</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Right Group: "Edit Theme" | "Edit profile" | "Edit avatar" | "..." (#e3e5e8 pills) -->
+          <div class="pt-1 md:pt-4 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onclick="toggleBannerStudio(true)"
+              class="h-[36px] px-4 rounded-[8px] bg-[#E3E5E8] hover:bg-[#D5D8DC] dark:bg-[#2B2D30] dark:hover:bg-[#393B3D] text-[#191B1D] dark:text-white text-[13.5px] font-semibold transition cursor-pointer flex items-center gap-1.5"
+            >
+              <span>Edit Theme</span>
+            </button>
+
+            <button
+              type="button"
+              onclick="focusProfileBio()"
+              class="h-[36px] px-4 rounded-[8px] bg-[#E3E5E8] hover:bg-[#D5D8DC] dark:bg-[#2B2D30] dark:hover:bg-[#393B3D] text-[#191B1D] dark:text-white text-[13.5px] font-semibold transition cursor-pointer"
+            >
+              Edit profile
+            </button>
+
+            <button
+              type="button"
+              onclick="document.getElementById('avatar-file-input').click()"
+              title="Upload a custom transparent avatar PNG"
+              class="h-[36px] px-4 rounded-[8px] bg-[#E3E5E8] hover:bg-[#D5D8DC] dark:bg-[#2B2D30] dark:hover:bg-[#393B3D] text-[#191B1D] dark:text-white text-[13.5px] font-semibold transition cursor-pointer"
+            >
+              Edit avatar
+            </button>
+
+            <div class="relative">
+              <button
+                type="button"
+                onclick="toggleMoreDropdown()"
+                aria-label="More options"
+                class="w-[36px] h-[36px] rounded-[8px] bg-[#E3E5E8] hover:bg-[#D5D8DC] dark:bg-[#2B2D30] dark:hover:bg-[#393B3D] text-[#191B1D] dark:text-white text-[14px] flex items-center justify-center transition cursor-pointer"
+              >
+                <i class="fa-solid fa-ellipsis"></i>
+              </button>
+
+              <!-- Dropdown Menu -->
+              <div id="more-dropdown" class="hidden absolute right-0 mt-1.5 w-60 rounded-lg bg-white dark:bg-[#232527] border border-gray-200 dark:border-[#393B3D] shadow-lg py-1 z-40 text-[13px]">
+                <button onclick="document.getElementById('banner-file-input').click(); toggleMoreDropdown();" class="w-full text-left px-3.5 py-2 hover:bg-gray-100 dark:hover:bg-[#2B2D30] flex items-center gap-2">
+                  <i class="fa-solid fa-upload text-xs text-rbx-blue"></i> Upload 2560×1440 Banner
+                </button>
+                <button onclick="document.getElementById('screenshot-extract-input').click(); toggleMoreDropdown();" class="w-full text-left px-3.5 py-2 hover:bg-gray-100 dark:hover:bg-[#2B2D30] flex items-center gap-2">
+                  <i class="fa-solid fa-wand-magic-sparkles text-xs text-sky-500"></i> Extract Avatar from Screenshot
+                </button>
+                <button onclick="document.getElementById('avatar-file-input').click(); toggleMoreDropdown();" class="w-full text-left px-3.5 py-2 hover:bg-gray-100 dark:hover:bg-[#2B2D30] flex items-center gap-2">
+                  <i class="fa-solid fa-user-check text-xs text-emerald-500"></i> Upload Transparent Avatar PNG
+                </button>
+                <button onclick="fetchRealRobloxAvatar(document.getElementById('roblox-username-input').value); toggleMoreDropdown();" class="w-full text-left px-3.5 py-2 hover:bg-gray-100 dark:hover:bg-[#2B2D30] flex items-center gap-2">
+                  <i class="fa-solid fa-rotate text-xs text-gray-500"></i> Re-fetch Live Roblox Avatar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. SOCIAL STATS PILLS ROW ("21 Friends" | "28 Followers" | "1 Following") -->
+        <div class="px-2 sm:px-4 mt-4 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onclick="showToast('21 Friends')"
+            class="px-3.5 py-[6px] rounded-full bg-[#E3E5E8] hover:bg-[#D5D8DC] dark:bg-[#2B2D30] dark:hover:bg-[#393B3D] text-[#191B1D] dark:text-white text-[13px] transition cursor-pointer"
+          >
+            <span class="font-bold">21</span> <span class="font-medium">Friends</span>
+          </button>
+
+          <button
+            type="button"
+            onclick="showToast('28 Followers')"
+            class="px-3.5 py-[6px] rounded-full bg-[#E3E5E8] hover:bg-[#D5D8DC] dark:bg-[#2B2D30] dark:hover:bg-[#393B3D] text-[#191B1D] dark:text-white text-[13px] transition cursor-pointer"
+          >
+            <span class="font-bold">28</span> <span class="font-medium">Followers</span>
+          </button>
+
+          <button
+            type="button"
+            onclick="showToast('1 Following')"
+            class="px-3.5 py-[6px] rounded-full bg-[#E3E5E8] hover:bg-[#D5D8DC] dark:bg-[#2B2D30] dark:hover:bg-[#393B3D] text-[#191B1D] dark:text-white text-[13px] transition cursor-pointer"
+          >
+            <span class="font-bold">1</span> <span class="font-medium">Following</span>
+          </button>
+        </div>
+
+        <!-- 4. BIO SECTION ("17y lebanese / ... / more") -->
+        <div class="px-2 sm:px-4 mt-3.5 text-[13px] text-[#393B3D] dark:text-[#D1D5DB] leading-[1.45]">
+          <div
+            id="bio-main-text"
+            contenteditable="true"
+            spellcheck="false"
+            class="outline-none focus:bg-black/5 dark:focus:bg-white/10 rounded px-0.5 -mx-0.5 inline-block"
+          >17y lebanese</div>
+          <div id="bio-dots" class="text-[#606266] dark:text-[#9CA3AF]">...</div>
+          <div id="bio-extra-text" class="hidden mt-1 text-[#393B3D] dark:text-[#D1D5DB]">
+            Testing custom 2560×1440 Roblox profile banner themes.
+          </div>
+          <button
+            id="bio-more-btn"
+            type="button"
+            onclick="toggleBioMore()"
+            class="underline text-[#393B3D] dark:text-[#D1D5DB] hover:text-black dark:hover:text-white font-normal cursor-pointer"
+          >more</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- =====================================================================
+         5. 2560×1440 PROFILE BANNER & CROP STUDIO
+         ===================================================================== -->
+    <section id="banner-studio-panel" class="mt-8 rounded-2xl bg-[#F6F7F9] dark:bg-[#191B1D] border border-[#E2E5EB] dark:border-[#2B2D30] p-4 sm:p-5 shadow-xs transition-all">
+
+      <!-- Studio Header -->
+      <div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#E2E5EB] dark:border-[#2B2D30]">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-[#0077FF]/10 text-[#0077FF] flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-panorama text-base"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <h2 class="text-[15px] font-bold text-[#191B1D] dark:text-white">2560 × 1440 Banner & Real Avatar Studio</h2>
+              <span id="avatar-source-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-sky-500/15 text-sky-600 dark:text-sky-400">
+                Live Roblox Render (@Levntine)
+              </span>
+            </div>
+            <p class="text-[12px] text-[#606266] dark:text-[#9CA3AF]">
+              Upload your 2560×1440 (16:9) background to test how it frames behind your real Roblox avatar, or paste a screenshot (<kbd class="px-1 py-0.2 bg-black/10 dark:bg-white/10 rounded text-[11px]">Ctrl+V</kbd>) to extract your cutout.
+            </p>
+          </div>
+        </div>
+
+        <!-- Theme Toggle -->
+        <div class="flex items-center gap-2">
+          <button
+            id="page-theme-btn"
+            type="button"
+            onclick="togglePageTheme()"
+            title="Switch between Roblox Light Mode and Dark Mode"
+            class="h-[34px] px-3 rounded-lg bg-[#E3E5E8] hover:bg-[#D5D8DC] dark:bg-[#2B2D30] dark:hover:bg-[#393B3D] text-[#191B1D] dark:text-white text-[12.5px] font-semibold flex items-center gap-1.5 transition cursor-pointer"
+          >
+            <i id="page-theme-icon" class="fa-solid fa-moon text-xs"></i>
+            <span id="page-theme-label">Dark Mode</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Studio Controls Grid -->
+      <div class="pt-4 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+
+        <!-- Left: Vertical & Horizontal Framing Sliders -->
+        <div class="md:col-span-5 space-y-3 bg-white dark:bg-[#111214] p-3.5 rounded-xl border border-[#E2E5EB] dark:border-[#2B2D30]">
+          <div>
+            <div class="flex justify-between text-[12px] mb-1">
+              <span class="font-semibold text-[#191B1D] dark:text-white">Vertical Crop Alignment (Y-Offset)</span>
+              <span id="pos-y-label" class="font-bold text-[#0077FF]">50% (Center)</span>
+            </div>
+            <input id="banner-pos-y" type="range" min="0" max="100" value="50" class="w-full" />
+          </div>
+
+          <div>
+            <div class="flex justify-between text-[12px] mb-1">
+              <span class="font-semibold text-[#191B1D] dark:text-white">Banner Zoom</span>
+              <span id="zoom-label" class="font-bold text-[#0077FF]">100%</span>
+            </div>
+            <input id="banner-zoom" type="range" min="100" max="160" value="100" class="w-full" />
+          </div>
+        </div>
+
+        <!-- Middle: Safe-Zone Overlay & Device Width Toggles -->
+        <div class="md:col-span-4 space-y-2.5 bg-white dark:bg-[#111214] p-3.5 rounded-xl border border-[#E2E5EB] dark:border-[#2B2D30]">
+          <div class="flex items-center justify-between">
+            <span class="text-[12px] font-semibold text-[#191B1D] dark:text-white">Crop & Avatar Safe-Zone Guides</span>
+            <button
+              id="safe-zone-btn"
+              type="button"
+              onclick="toggleSafeZone()"
+              class="px-2.5 py-1 rounded-md bg-[#E3E5E8] dark:bg-[#2B2D30] text-[#191B1D] dark:text-white text-[11px] font-bold transition cursor-pointer"
+            >
+              OFF
+            </button>
+          </div>
+
+          <div class="pt-1">
+            <span class="block text-[11px] font-semibold text-[#606266] dark:text-[#9CA3AF] mb-1.5">Test Screen Width Crop:</span>
+            <div class="grid grid-cols-3 gap-1.5">
+              <button type="button" onclick="setViewportWidth('full', this)" class="vp-btn py-1 rounded-md bg-[#0077FF] text-white text-[11px] font-bold transition cursor-pointer">
+                Desktop
+              </button>
+              <button type="button" onclick="setViewportWidth('768px', this)" class="vp-btn py-1 rounded-md bg-[#E3E5E8] dark:bg-[#2B2D30] text-[#191B1D] dark:text-white text-[11px] font-semibold transition cursor-pointer">
+                Tablet
+              </button>
+              <button type="button" onclick="setViewportWidth('412px', this)" class="vp-btn py-1 rounded-md bg-[#E3E5E8] dark:bg-[#2B2D30] text-[#191B1D] dark:text-white text-[11px] font-semibold transition cursor-pointer">
+                Mobile
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Procedural 2560×1440 Sample Templates -->
+        <div class="md:col-span-3 space-y-2 bg-white dark:bg-[#111214] p-3.5 rounded-xl border border-[#E2E5EB] dark:border-[#2B2D30]">
+          <span class="block text-[12px] font-semibold text-[#191B1D] dark:text-white">Test 2560×1440 Templates:</span>
+          <div class="flex flex-col gap-1.5">
+            <button type="button" onclick="generate2560Sample('safegrid')" class="w-full text-left px-2.5 py-1.5 rounded-md bg-[#E3E5E8] hover:bg-[#D5D8DC] dark:bg-[#2B2D30] dark:hover:bg-[#393B3D] text-[11.5px] font-semibold flex items-center justify-between transition cursor-pointer">
+              <span>2560×1440 Safe-Zone Grid</span>
+              <i class="fa-solid fa-ruler-combined text-[10px] text-[#0077FF]"></i>
+            </button>
+            <button type="button" onclick="generate2560Sample('sunset')" class="w-full text-left px-2.5 py-1.5 rounded-md bg-[#E3E5E8] hover:bg-[#D5D8DC] dark:bg-[#2B2D30] dark:hover:bg-[#393B3D] text-[11.5px] font-semibold flex items-center justify-between transition cursor-pointer">
+              <span>Mediterranean Dusk (2K)</span>
+              <i class="fa-solid fa-sun text-[10px] text-amber-500"></i>
+            </button>
+            <button type="button" onclick="generate2560Sample('cyber')" class="w-full text-left px-2.5 py-1.5 rounded-md bg-[#E3E5E8] hover:bg-[#D5D8DC] dark:bg-[#2B2D30] dark:hover:bg-[#393B3D] text-[11.5px] font-semibold flex items-center justify-between transition cursor-pointer">
+              <span>Midnight Neon Horizon</span>
+              <i class="fa-solid fa-bolt text-[10px] text-purple-500"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Drag & Drop Fullscreen Overlay -->
+  <div id="drag-overlay" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-xs border-4 border-dashed border-[#0077FF] flex flex-col items-center justify-center pointer-events-none">
+    <div class="w-16 h-16 rounded-2xl bg-[#0077FF]/20 text-[#0077FF] flex items-center justify-center mb-3">
+      <i class="fa-solid fa-panorama text-3xl"></i>
+    </div>
+    <p class="text-xl font-extrabold text-white">Drop 2560×1440 Banner Image</p>
+    <p class="text-sm text-gray-300 mt-1">Preview how it frames behind your real Roblox avatar</p>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 pointer-events-none flex flex-col gap-2"></div>
+
+  <!-- =====================================================================
+       JAVASCRIPT: REAL ROBLOX AVATAR API + SCREENSHOT CHROMA-KEY EXTRACTOR
+       ===================================================================== -->
+  <script>
+    const bannerInput = document.getElementById('banner-file-input');
+    const avatarInput = document.getElementById('avatar-file-input');
+    const screenshotExtractInput = document.getElementById('screenshot-extract-input');
+    const bannerImg = document.getElementById('banner-bg-image');
+    const bannerBox = document.getElementById('profile-banner-box');
+    const resBadge = document.getElementById('resolution-badge');
+    const avatarSourceBadge = document.getElementById('avatar-source-badge');
+    const posYSlider = document.getElementById('banner-pos-y');
+    const zoomSlider = document.getElementById('banner-zoom');
+
+    const fullbodyImg = document.getElementById('real-fullbody-avatar');
+    const headshotImg = document.getElementById('real-headshot-avatar');
+    const loadingPill = document.getElementById('avatar-loading-pill');
+    const fallbackCard = document.getElementById('avatar-fallback-card');
+
+    let is3DMode = false;
+    let isDraggingAvatar = false;
+    let dragStartX = 0;
+    let currentRotY = 0;
+    let safeZoneVisible = false;
+    let likesCount = 0;
+    let bioExpanded = false;
+
+    // -----------------------------------------------------------------------
+    // 1. LIVE ROBLOX PUBLIC API AVATAR FETCHER (Full-Body + Headshot PNGs)
+    // -----------------------------------------------------------------------
+    async function fetchWithCorsFallback(targetUrl, options = {}) {
+      // Try direct first, then reliable CORS proxies if browser blocks cross-origin
+      const endpoints = [
+        targetUrl,
+        `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`
+      ];
+
+      for (const url of endpoints) {
+        try {
+          const res = await fetch(url, options);
+          if (res.ok) return await res.json();
+        } catch (_) {
+          // Try next endpoint
+        }
+      }
+      throw new Error('Could not reach Roblox API');
+    }
+
+    async function fetchRealRobloxAvatar(usernameInput) {
+      const cleanName = (usernameInput || 'Levntine').trim().replace(/^@/, '');
+      if (!cleanName) return;
+
+      const spinner = document.getElementById('fetch-spinner');
+      spinner.classList.add('fa-spin');
+      loadingPill.classList.remove('hidden');
+      fallbackCard.classList.add('hidden');
+
+      try {
+        let userId = null;
+        let resolvedName = cleanName;
+        let resolvedDisplay = cleanName;
+
+        // If user entered numeric UserID directly
+        if (/^\d+$/.test(cleanName)) {
+          userId = Number(cleanName);
+        } else {
+          // Resolve username -> userId via Roblox Users API (with CORS proxy support)
+          const lookupUrl = 'https://users.roblox.com/v1/usernames/users';
+          const payload = JSON.stringify({ usernames: [cleanName], excludeBannedUsers: false });
+
+          let userData = null;
+          try {
+            const directRes = await fetch(lookupUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: payload
+            });
+            if (directRes.ok) userData = await directRes.json();
+          } catch (_) {}
+
+          if (!userData || !userData.data || !userData.data.length) {
+            // Fallback via corsproxy.io POST
+            const proxyRes = await fetch(`https://corsproxy.io/?${encodeURIComponent(lookupUrl)}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: payload
+            });
+            if (proxyRes.ok) userData = await proxyRes.json();
+          }
+
+          if (userData && userData.data && userData.data.length > 0) {
+            userId = userData.data[0].id;
+            resolvedName = userData.data[0].name;
+            resolvedDisplay = userData.data[0].displayName || resolvedName;
+          }
+        }
+
+        if (!userId) throw new Error('User not found');
+
+        // Fetch Full-Body Avatar PNG (720x720 transparent) & Headshot PNG (420x420)
+        const bodyApi = `https://thumbnails.roblox.com/v1/users/avatar?userIds=${userId}&size=720x720&format=Png&isCircular=false`;
+        const headApi = `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=420x420&format=Png&isCircular=false`;
+
+        const [bodyJson, headJson] = await Promise.all([
+          fetchWithCorsFallback(bodyApi),
+          fetchWithCorsFallback(headApi)
+        ]);
+
+        const bodyUrl = bodyJson?.data?.[0]?.imageUrl;
+        const headUrl = headJson?.data?.[0]?.imageUrl;
+
+        if (!bodyUrl) throw new Error('Avatar thumbnail unavailable');
+
+        // Load real raster PNGs directly from tr.rbxcdn.com
+        fullbodyImg.src = bodyUrl;
+        fullbodyImg.classList.remove('hidden');
+
+        if (headUrl) {
+          headshotImg.src = headUrl;
+          headshotImg.classList.remove('hidden');
+        }
+
+        document.getElementById('profile-display-name').textContent = resolvedDisplay;
+        document.getElementById('profile-handle').textContent = `@${resolvedName}`;
+        avatarSourceBadge.textContent = `Live Roblox Render (@${resolvedName})`;
+        avatarSourceBadge.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400';
+
+        showToast(`Loaded real Roblox avatar for @${resolvedName}`);
+      } catch (err) {
+        // Show clear prompt to paste screenshot (Ctrl+V) or upload PNG if offline/rate-limited
+        if (!fullbodyImg.getAttribute('src')) {
+          fullbodyImg.classList.add('hidden');
+          fallbackCard.classList.remove('hidden');
+        }
+        avatarSourceBadge.textContent = 'Paste Screenshot (Ctrl+V) or Upload Avatar PNG';
+        avatarSourceBadge.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400';
+      } finally {
+        spinner.classList.remove('fa-spin');
+        loadingPill.classList.add('hidden');
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // 2. SCREENSHOT CHROMA-KEY EXTRACTOR (Removes Gray Banner BG from Screenshot)
+    // -----------------------------------------------------------------------
+    function extractAvatarFromScreenshot(imageSrc) {
+      const img = new Image();
+      img.onload = function () {
+        const w = img.naturalWidth;
+        const h = img.naturalHeight;
+
+        const srcCanvas = document.createElement('canvas');
+        srcCanvas.width = w;
+        srcCanvas.height = h;
+        const sctx = srcCanvas.getContext('2d');
+        sctx.drawImage(img, 0, 0);
+
+        // Locate the gray-blue banner region in the upper portion of the screenshot
+        // Sample center-left and center-right background pixels where banner gray sits
+        const sampleY = Math.floor(h * 0.28);
+        const leftSample = sctx.getImageData(Math.floor(w * 0.18), sampleY, 1, 1).data;
+        const rightSample = sctx.getImageData(Math.floor(w * 0.82), sampleY, 1, 1).data;
+
+        const bgR = (leftSample[0] + rightSample[0]) / 2;
+        const bgG = (leftSample[1] + rightSample[1]) / 2;
+        const bgB = (leftSample[2] + rightSample[2]) / 2;
+
+        // Crop center vertical strip containing the standing full-body character
+        const cropX = Math.floor(w * 0.36);
+        const cropW = Math.floor(w * 0.28);
+        // Find vertical bottom of the banner (where gray transitions to white page bg)
+        let bannerBottomY = Math.floor(h * 0.56);
+        for (let y = Math.floor(h * 0.35); y < Math.floor(h * 0.75); y++) {
+          const px = sctx.getImageData(Math.floor(w * 0.18), y, 1, 1).data;
+          // White page background is ~250+ brightness whereas banner gray is ~195-215
+          if (px[0] > 240 && px[1] > 240 && px[2] > 240) {
+            bannerBottomY = y;
+            break;
+          }
+        }
+
+        const cropY = Math.floor(h * 0.03);
+        const cropH = Math.max(100, bannerBottomY - cropY);
+
+        const outCanvas = document.createElement('canvas');
+        outCanvas.width = cropW;
+        outCanvas.height = cropH;
+        const octx = outCanvas.getContext('2d');
+        octx.drawImage(srcCanvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+        const frame = octx.getImageData(0, 0, cropW, cropH);
+        const data = frame.data;
+
+        // Flood-fill from outer borders of the character crop so internal light-gray shoes/keffiyeh are preserved!
+        const visited = new Uint8Array(cropW * cropH);
+        const queue = new Int32Array(cropW * cropH);
+        let head = 0;
+        let tail = 0;
+
+        function isBannerGray(r, g, b, yNorm) {
+          // Banner has a slight vertical gradient from top to bottom
+          const expectedR = bgR + (yNorm - 0.5) * 14;
+          const expectedG = bgG + (yNorm - 0.5) * 14;
+          const expectedB = bgB + (yNorm - 0.5) * 14;
+          const dist = Math.hypot(r - expectedR, g - expectedG, b - expectedB);
+          return dist < 24;
+        }
+
+        // Seed flood-fill along top, left, and right edges of the crop box
+        for (let x = 0; x < cropW; x++) {
+          const topIdx = x;
+          visited[topIdx] = 1;
+          queue[tail++] = topIdx;
+        }
+        for (let y = 0; y < cropH; y++) {
+          const leftIdx = y * cropW;
+          const rightIdx = y * cropW + (cropW - 1);
+          if (!visited[leftIdx]) { visited[leftIdx] = 1; queue[tail++] = leftIdx; }
+          if (!visited[rightIdx]) { visited[rightIdx] = 1; queue[tail++] = rightIdx; }
+        }
+
+        while (head < tail) {
+          const idx = queue[head++];
+          const pxOffset = idx * 4;
+          const y = Math.floor(idx / cropW);
+          const x = idx % cropW;
+          const yNorm = y / cropH;
+
+          const r = data[pxOffset];
+          const g = data[pxOffset + 1];
+          const b = data[pxOffset + 2];
+
+          if (isBannerGray(r, g, b, yNorm)) {
+            // Make banner pixel transparent
+            data[pxOffset + 3] = 0;
+
+            // Expand to 4-connected neighbors
+            if (x > 0 && !visited[idx - 1]) { visited[idx - 1] = 1; queue[tail++] = idx - 1; }
+            if (x < cropW - 1 && !visited[idx + 1]) { visited[idx + 1] = 1; queue[tail++] = idx + 1; }
+            if (y > 0 && !visited[idx - cropW]) { visited[idx - cropW] = 1; queue[tail++] = idx - cropW; }
+            if (y < cropH - 1 && !visited[idx + cropW]) { visited[idx + cropW] = 1; queue[tail++] = idx + cropW; }
+          } else {
+            // Soft anti-aliased edge feathering on boundary pixels
+            const dist = Math.hypot(r - bgR, g - bgG, b - bgB);
+            if (dist < 34) {
+              data[pxOffset + 3] = Math.round(((dist - 20) / 14) * 255);
+            }
+          }
+        }
+
+        octx.putImageData(frame, 0, 0);
+
+        // Trim transparent horizontal margins so character is dead-center
+        let minX = cropW, maxX = 0, minY = cropH, maxY = 0;
+        for (let y = 0; y < cropH; y++) {
+          for (let x = 0; x < cropW; x++) {
+            if (data[(y * cropW + x) * 4 + 3] > 30) {
+              if (x < minX) minX = x;
+              if (x > maxX) maxX = x;
+              if (y < minY) minY = y;
+              if (y > maxY) maxY = y;
+            }
+          }
+        }
+
+        const trimmedW = Math.max(10, maxX - minX + 1);
+        const trimmedH = Math.max(10, maxY - minY + 1);
+        const finalCanvas = document.createElement('canvas');
+        finalCanvas.width = trimmedW;
+        finalCanvas.height = trimmedH;
+        finalCanvas.getContext('2d').drawImage(outCanvas, minX, minY, trimmedW, trimmedH, 0, 0, trimmedW, trimmedH);
+
+        const transparentCutoutUrl = finalCanvas.toDataURL('image/png');
+        fullbodyImg.src = transparentCutoutUrl;
+        fullbodyImg.classList.remove('hidden');
+        fallbackCard.classList.add('hidden');
+
+        // Also extract the circular headshot from bottom-left of the screenshot
+        const headCanvas = document.createElement('canvas');
+        headCanvas.width = 240;
+        headCanvas.height = 240;
+        const hctx = headCanvas.getContext('2d');
+        // Headshot sits at roughly x: 1.5%..13.5%, y: 48%..75% of the profile header screenshot
+        const hsSize = Math.floor(h * 0.22);
+        const hsX = Math.floor(w * 0.018);
+        const hsY = Math.max(0, bannerBottomY - Math.floor(hsSize * 0.52));
+        hctx.drawImage(srcCanvas, hsX, hsY, hsSize, hsSize, 0, 0, 240, 240);
+        headshotImg.src = headCanvas.toDataURL('image/png');
+        headshotImg.classList.remove('hidden');
+
+        avatarSourceBadge.textContent = 'Extracted Real Avatar Cutout';
+        avatarSourceBadge.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400';
+        showToast('Extracted transparent avatar cutout from screenshot!');
+      };
+      img.src = imageSrc;
+    }
+
+    // Listen for Ctrl+V Paste anywhere on the page to extract screenshot cutout!
+    window.addEventListener('paste', (e) => {
+      const items = e.clipboardData && e.clipboardData.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          const reader = new FileReader();
+          reader.onload = (ev) => extractAvatarFromScreenshot(ev.target.result);
+          reader.readAsDataURL(file);
+          break;
+        }
+      }
+    });
+
+    screenshotExtractInput.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => extractAvatarFromScreenshot(ev.target.result);
+      reader.readAsDataURL(file);
+    });
+
+    // Direct Transparent Avatar PNG Upload
+    avatarInput.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        fullbodyImg.src = ev.target.result;
+        fullbodyImg.classList.remove('hidden');
+        headshotImg.src = ev.target.result;
+        headshotImg.classList.remove('hidden');
+        fallbackCard.classList.add('hidden');
+        avatarSourceBadge.textContent = `Custom Avatar PNG (${file.name})`;
+        avatarSourceBadge.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400';
+        showToast('Applied custom transparent avatar PNG!');
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // -----------------------------------------------------------------------
+    // 3. Handle 2560x1440 Banner Upload & Resolution Verification
+    // -----------------------------------------------------------------------
+    function applyBannerImage(srcUrl, fileName = 'Custom Banner') {
+      const probe = new Image();
+      probe.onload = function () {
+        const w = probe.naturalWidth;
+        const h = probe.naturalHeight;
+        const ratio = (w / h).toFixed(2);
+        const isExact2560 = (w === 2560 && h === 1440);
+        const is16by9 = Math.abs((w / h) - (16 / 9)) < 0.03;
+
+        bannerImg.src = srcUrl;
+        bannerImg.classList.remove('hidden');
+
+        if (isExact2560) {
+          resBadge.textContent = `${w} × ${h} (Exact 2560×1440 Match)`;
+          resBadge.className = 'px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-500/20 text-emerald-400';
+        } else if (is16by9) {
+          resBadge.textContent = `${w} × ${h} (16:9 Ratio)`;
+          resBadge.className = 'px-2.5 py-1 rounded-md text-[11px] font-bold bg-sky-500/20 text-sky-400';
+        } else {
+          resBadge.textContent = `${w} × ${h} (Ratio ${ratio}:1 — 2560×1440 recommended)`;
+          resBadge.className = 'px-2.5 py-1 rounded-md text-[11px] font-bold bg-amber-500/20 text-amber-400';
+        }
+
+        showToast(`Loaded "${fileName}" (${w}×${h})`);
+      };
+      probe.src = srcUrl;
+    }
+
+    bannerInput.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => applyBannerImage(ev.target.result, file.name);
+      reader.readAsDataURL(file);
+    });
+
+    function resetBanner() {
+      bannerImg.src = '';
+      bannerImg.classList.add('hidden');
+      bannerInput.value = '';
+      posYSlider.value = 50;
+      zoomSlider.value = 100;
+      updateBannerFraming();
+      resBadge.textContent = 'Default Gray Banner';
+      resBadge.className = 'px-2.5 py-1 rounded-md text-[11px] font-semibold bg-[#2B2D30] text-[#D1D5DB]';
+      showToast('Reset banner to default gray');
+    }
+
+    // -----------------------------------------------------------------------
+    // 4. Framing Sliders, 2560x1440 Templates, 3D Mode & UI Helpers
+    // -----------------------------------------------------------------------
+    function updateBannerFraming() {
+      const y = posYSlider.value;
+      const z = zoomSlider.value;
+      bannerImg.style.objectPosition = `50% ${y}%`;
+      bannerImg.style.transform = `scale(${(z / 100).toFixed(2)})`;
+      document.getElementById('pos-y-label').textContent = y == 50 ? '50% (Center)' : `${y}%`;
+      document.getElementById('zoom-label').textContent = `${z}%`;
+    }
+
+    posYSlider.addEventListener('input', updateBannerFraming);
+    zoomSlider.addEventListener('input', updateBannerFraming);
+
+    function generate2560Sample(type) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 2560;
+      canvas.height = 1440;
+      const ctx = canvas.getContext('2d');
+
+      if (type === 'safegrid') {
+        ctx.fillStyle = '#141821';
+        ctx.fillRect(0, 0, 2560, 1440);
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.16)';
+        ctx.lineWidth = 2;
+        for (let x = 0; x <= 2560; x += 160) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 1440); ctx.stroke();
+        }
+        for (let y = 0; y <= 1440; y += 160) {
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(2560, y); ctx.stroke();
+        }
+        ctx.fillStyle = 'rgba(0, 119, 255, 0.14)';
+        ctx.fillRect(0, 360, 2560, 720);
+        ctx.strokeStyle = '#38BDF8';
+        ctx.lineWidth = 6;
+        ctx.strokeRect(3, 360, 2554, 720);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 48px Inter, sans-serif';
+        ctx.fillText('2560 × 1440 FULL CANVAS (16:9)', 60, 110);
+        ctx.fillStyle = '#38BDF8';
+        ctx.font = 'bold 36px Inter, sans-serif';
+        ctx.fillText('DESKTOP PROFILE BANNER VISIBLE CROP ZONE (CENTER 2560 × 720)', 60, 425);
+        applyBannerImage(canvas.toDataURL('image/png'), '2560x1440_SafeZone_Template.png');
+      } else if (type === 'sunset') {
+        const grad = ctx.createLinearGradient(0, 0, 0, 1440);
+        grad.addColorStop(0, '#1E1B4B');
+        grad.addColorStop(0.45, '#BE185D');
+        grad.addColorStop(0.72, '#F97316');
+        grad.addColorStop(1, '#FDE047');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 2560, 1440);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+        ctx.beginPath();
+        ctx.arc(1280, 720, 340, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#0F172A';
+        ctx.beginPath();
+        ctx.moveTo(0, 1440);
+        ctx.lineTo(0, 860);
+        ctx.lineTo(420, 740);
+        ctx.lineTo(880, 840);
+        ctx.lineTo(1280, 770);
+        ctx.lineTo(1750, 850);
+        ctx.lineTo(2200, 720);
+        ctx.lineTo(2560, 830);
+        ctx.lineTo(2560, 1440);
+        ctx.closePath();
+        ctx.fill();
+        applyBannerImage(canvas.toDataURL('image/jpeg', 0.92), 'Mediterranean_Dusk_2560x1440.jpg');
+      } else if (type === 'cyber') {
+        const grad = ctx.createLinearGradient(0, 0, 2560, 1440);
+        grad.addColorStop(0, '#090D16');
+        grad.addColorStop(0.5, '#111827');
+        grad.addColorStop(1, '#1E1B4B');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 2560, 1440);
+        ctx.strokeStyle = 'rgba(0, 162, 255, 0.45)';
+        ctx.lineWidth = 4;
+        for (let i = 0; i < 8; i++) {
+          ctx.strokeRect(120 + i * 28, 420 + i * 18, 520, 480);
+          ctx.strokeRect(1920 - i * 28, 420 + i * 18, 520, 480);
+        }
+        applyBannerImage(canvas.toDataURL('image/jpeg', 0.92), 'Midnight_Neon_2560x1440.jpg');
+      }
+    }
+
+    function toggle3DMode() {
+      is3DMode = !is3DMode;
+      const btn = document.getElementById('toggle-3d-btn');
+      const hint = document.getElementById('mode-3d-hint');
+      const rig = document.getElementById('avatar-rig');
+
+      if (is3DMode) {
+        btn.textContent = '2D';
+        btn.classList.add('ring-2', 'ring-[#0077FF]');
+        hint.classList.remove('hidden');
+        bannerBox.style.cursor = 'grab';
+        showToast('3D Mode Enabled — Drag horizontally on banner to rotate avatar');
+      } else {
+        btn.textContent = '3D';
+        btn.classList.remove('ring-2', 'ring-[#0077FF]');
+        hint.classList.add('hidden');
+        bannerBox.style.cursor = 'pointer';
+        currentRotY = 0;
+        rig.style.transform = 'rotateY(0deg)';
+      }
+    }
+
+    bannerBox.addEventListener('mousedown', (e) => {
+      if (!is3DMode) return;
+      isDraggingAvatar = true;
+      dragStartX = e.clientX;
+      bannerBox.style.cursor = 'grabbing';
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDraggingAvatar || !is3DMode) return;
+      const deltaX = e.clientX - dragStartX;
+      dragStartX = e.clientX;
+      currentRotY = Math.max(-75, Math.min(75, currentRotY + deltaX * 0.65));
+      document.getElementById('avatar-rig').style.transform = `rotateY(${currentRotY}deg)`;
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (isDraggingAvatar) {
+        setTimeout(() => { isDraggingAvatar = false; }, 40);
+        if (is3DMode) bannerBox.style.cursor = 'grab';
+      }
+    });
+
+    function toggleSafeZone() {
+      safeZoneVisible = !safeZoneVisible;
+      const overlay = document.getElementById('safe-zone-overlay');
+      const btn = document.getElementById('safe-zone-btn');
+      if (safeZoneVisible) {
+        overlay.classList.remove('hidden');
+        btn.textContent = 'ON';
+        btn.className = 'px-2.5 py-1 rounded-md bg-[#0077FF] text-white text-[11px] font-bold transition cursor-pointer';
+      } else {
+        overlay.classList.add('hidden');
+        btn.textContent = 'OFF';
+        btn.className = 'px-2.5 py-1 rounded-md bg-[#E3E5E8] dark:bg-[#2B2D30] text-[#191B1D] dark:text-white text-[11px] font-bold transition cursor-pointer';
+      }
+    }
+
+    function setViewportWidth(widthVal, clickedBtn) {
+      const frame = document.getElementById('preview-viewport-frame');
+      frame.style.maxWidth = widthVal === 'full' ? '100%' : widthVal;
+      document.querySelectorAll('.vp-btn').forEach(b => {
+        b.className = 'vp-btn py-1 rounded-md bg-[#E3E5E8] dark:bg-[#2B2D30] text-[#191B1D] dark:text-white text-[11px] font-semibold transition cursor-pointer';
+      });
+      clickedBtn.className = 'vp-btn py-1 rounded-md bg-[#0077FF] text-white text-[11px] font-bold transition cursor-pointer';
+    }
+
+    function togglePageTheme() {
+      const htmlEl = document.documentElement;
+      const isDark = htmlEl.classList.toggle('dark');
+      document.getElementById('page-theme-icon').className = isDark ? 'fa-solid fa-sun text-xs text-amber-400' : 'fa-solid fa-moon text-xs';
+      document.getElementById('page-theme-label').textContent = isDark ? 'Light Mode' : 'Dark Mode';
+    }
+
+    function toggleBannerStudio(scrollToIt = false) {
+      const panel = document.getElementById('banner-studio-panel');
+      if (scrollToIt) {
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        panel.classList.add('ring-2', 'ring-[#0077FF]');
+        setTimeout(() => panel.classList.remove('ring-2', 'ring-[#0077FF]'), 900);
+      }
+    }
+
+    function toggleBioMore() {
+      bioExpanded = !bioExpanded;
+      const extra = document.getElementById('bio-extra-text');
+      const dots = document.getElementById('bio-dots');
+      const btn = document.getElementById('bio-more-btn');
+      if (bioExpanded) {
+        extra.classList.remove('hidden');
+        dots.classList.add('hidden');
+        btn.textContent = 'less';
+      } else {
+        extra.classList.add('hidden');
+        dots.classList.remove('hidden');
+        btn.textContent = 'more';
+      }
+    }
+
+    function focusProfileBio() {
+      document.getElementById('bio-main-text').focus();
+      showToast('Click bio or display name to edit text');
+    }
+
+    function incrementLikes() {
+      likesCount = likesCount === 0 ? 1 : 0;
+      document.getElementById('like-counter').textContent = likesCount;
+    }
+
+    function toggleMoreDropdown() {
+      document.getElementById('more-dropdown').classList.toggle('hidden');
+    }
+
+    // Drag & Drop 2560x1440 Banner Image Support
+    let dragCounter = 0;
+    const dragOverlay = document.getElementById('drag-overlay');
+
+    window.addEventListener('dragenter', (e) => {
+      e.preventDefault();
+      dragCounter++;
+      dragOverlay.classList.remove('hidden');
+    });
+
+    window.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      dragCounter--;
+      if (dragCounter <= 0) {
+        dragCounter = 0;
+        dragOverlay.classList.add('hidden');
+      }
+    });
+
+    window.addEventListener('dragover', (e) => e.preventDefault());
+
+    window.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dragCounter = 0;
+      dragOverlay.classList.add('hidden');
+      const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (ev) => applyBannerImage(ev.target.result, file.name);
+        reader.readAsDataURL(file);
+      }
+    });
+
+    function showToast(msg) {
+      const container = document.getElementById('toast-container');
+      const el = document.createElement('div');
+      el.className = 'bg-[#191B1D] text-white text-[12.5px] font-semibold px-3.5 py-2.5 rounded-lg shadow-lg border border-white/10 flex items-center gap-2 transition-all duration-200';
+      el.innerHTML = `<i class="fa-solid fa-circle-check text-[#0077FF]"></i><span>${msg}</span>`;
+      container.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 200);
+      }, 2400);
+    }
+
+    // Automatically fetch @Levntine's real Roblox 3D avatar render on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      fetchRealRobloxAvatar('Levntine');
+    });
+  </script>
+</body>
+</html>
